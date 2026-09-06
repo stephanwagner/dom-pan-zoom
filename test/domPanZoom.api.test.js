@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import domPanZoom from '../src/index.js';
 import { createFixture, getTransform, setLayoutSize } from './helpers.js';
 
 describe('domPanZoom API', () => {
@@ -94,5 +95,69 @@ describe('domPanZoom API', () => {
 
     instance.zoomOut(true);
     expect(instance.getZoom()).toBe(1);
+  });
+
+  describe('constructor validation', () => {
+    it('throws when wrapperElement is missing', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(
+        () =>
+          new domPanZoom({
+            panZoomElement: document.createElement('div')
+          })
+      ).toThrow('The option wrapperElement is required.');
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('throws when panZoomElement is missing', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(
+        () =>
+          new domPanZoom({
+            wrapperElement: document.createElement('div')
+          })
+      ).toThrow('The option panZoomElement is required.');
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('throws when a selector matches no element', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(
+        () =>
+          new domPanZoom({
+            wrapperElement: '#missing-wrapper',
+            panZoomElement: document.createElement('div')
+          })
+      ).toThrow(
+        'The option wrapperElement needs to be a valid selector string or an instance of Element.'
+      );
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('throws when an option is not a selector string or Element', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(
+        () =>
+          new domPanZoom({
+            wrapperElement: document.createElement('div'),
+            panZoomElement: 42
+          })
+      ).toThrow(
+        'The option panZoomElement needs to be a valid selector string or an instance of Element.'
+      );
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
   });
 });

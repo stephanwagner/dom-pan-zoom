@@ -14,9 +14,9 @@ Notes from a JavaScript best-practices review of dom-pan-zoom (post Phase 1 / sv
 | `getTouchEventsCenter` | `ev1.pageY + ev2.pageX` | `ev1.pageY + ev2.pageY` |
 | `pan()` vertical step | `container.clientWidth` for height | `container.clientHeight` |
 
-### 2. Fail fast in the constructor
+### 2. Fail fast in the constructor — DONE
 
-If `wrapperElement` or `panZoomElement` is missing or not found, getters log to `console.error` and return `null`, then `init()` can throw (e.g. `wrapper.style.overflow`). **Throw a clear `Error` in the constructor** instead of producing a half-broken instance.
+`getWrapper()` / `getContainer()` now throw a clear `Error` when the option is missing, invalid, or a selector that matches nothing, before `init()` applies styles or attaches listeners.
 
 ### 3. Scope document-level listeners to active interaction
 

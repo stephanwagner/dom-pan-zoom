@@ -53,7 +53,8 @@ new domPanZoom({
 ```
 
 The options `wrapperElement` and `panZoomElement` are required.\
-You can use any query selector or the actual DOM element instance.
+You can use any query selector or the actual DOM element instance.\
+If either option is missing, invalid, or a selector that matches no element, the constructor throws an `Error`.
 
 > It is highly recommended to give the `panZoomElement` an actual width and height via CSS to avoid size calculation errors due to DOM drawing issues.
 

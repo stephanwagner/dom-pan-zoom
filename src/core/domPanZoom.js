@@ -928,8 +928,7 @@ export default class domPanZoom {
 
     // Abort if option is empty
     if (!this.options.wrapperElement) {
-      console.error('The option wrapperElement is required.');
-      return null;
+      throw new Error('The option wrapperElement is required.');
     }
 
     // Find the element if selector provided
@@ -948,10 +947,9 @@ export default class domPanZoom {
       return this.options.wrapperElement;
     }
 
-    console.error(
+    throw new Error(
       'The option wrapperElement needs to be a valid selector string or an instance of Element.'
     );
-    return null;
   }
 
   // Get the container element
@@ -963,8 +961,7 @@ export default class domPanZoom {
 
     // Abort if option is empty
     if (!this.options.panZoomElement) {
-      console.error('The option panZoomElement is required.');
-      return null;
+      throw new Error('The option panZoomElement is required.');
     }
 
     // Find the element if selector provided
@@ -983,10 +980,9 @@ export default class domPanZoom {
       return this.options.panZoomElement;
     }
 
-    console.error(
+    throw new Error(
       'The option panZoomElement needs to be a valid selector string or an instance of Element.'
     );
-    return null;
   }
 
   // Enable or disable transitions
