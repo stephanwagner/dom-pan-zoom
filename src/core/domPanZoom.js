@@ -227,6 +227,51 @@ export default class domPanZoom {
       this.fireEvent('onPan', this.getPosition());
     };
 
+    let mouseUpTouchEndEvent;
+
+    const addDocumentPanListeners = () => {
+      if (this._documentPanListening) {
+        return;
+      }
+
+      this._documentPanListening = true;
+      document.addEventListener('mousemove', setPositionEvent, {
+        passive: true
+      });
+      document.addEventListener('touchmove', setPositionEvent, {
+        passive: true
+      });
+      document.addEventListener('mouseup', mouseUpTouchEndEvent, {
+        passive: true
+      });
+      document.addEventListener('touchend', mouseUpTouchEndEvent, {
+        passive: true
+      });
+      document.addEventListener('touchcancel', mouseUpTouchEndEvent, {
+        passive: true
+      });
+    };
+
+    const removeDocumentPanListeners = () => {
+      if (!this._documentPanListening) {
+        return;
+      }
+
+      this._documentPanListening = false;
+      document.removeEventListener('mousemove', setPositionEvent);
+      document.removeEventListener('touchmove', setPositionEvent);
+      document.removeEventListener('mouseup', mouseUpTouchEndEvent);
+      document.removeEventListener('touchend', mouseUpTouchEndEvent);
+      document.removeEventListener('touchcancel', mouseUpTouchEndEvent);
+    };
+
+    mouseUpTouchEndEvent = () => {
+      this.previousEvent = null;
+      document.body.style.cursor = null;
+      this.updateInteractionCursor();
+      removeDocumentPanListeners();
+    };
+
     // Mouse down or touchstart event
     const mouseDownTouchStartEvent = (ev) => {
       if (!this.options.panEnabled) {
@@ -236,12 +281,7 @@ export default class domPanZoom {
       ev.preventDefault();
       document.body.style.cursor = 'grabbing';
       this.getWrapper().style.cursor = 'grabbing';
-      document.addEventListener('mousemove', setPositionEvent, {
-        passive: true
-      });
-      document.addEventListener('touchmove', setPositionEvent, {
-        passive: true
-      });
+      addDocumentPanListeners();
     };
 
     this.getWrapper().addEventListener('mousedown', mouseDownTouchStartEvent, {
@@ -250,25 +290,6 @@ export default class domPanZoom {
 
     this.getWrapper().addEventListener('touchstart', mouseDownTouchStartEvent, {
       passive: false
-    });
-
-    const mouseUpTouchEndEvent = () => {
-      this.previousEvent = null;
-      document.body.style.cursor = null;
-      this.updateInteractionCursor();
-      document.removeEventListener('mousemove', setPositionEvent, {
-        passive: true
-      });
-      document.removeEventListener('touchmove', setPositionEvent, {
-        passive: true
-      });
-    };
-
-    document.addEventListener('mouseup', mouseUpTouchEndEvent, {
-      passive: true
-    });
-    document.addEventListener('touchend', mouseUpTouchEndEvent, {
-      passive: true
     });
 
     // Mouse wheel events
@@ -443,7 +464,8 @@ export default class domPanZoom {
       doubleClickEvent,
       pointerDownEvent,
       pointerMoveEvent,
-      pointerUpEvent
+      pointerUpEvent,
+      removeDocumentPanListeners
     };
   }
 
@@ -472,10 +494,7 @@ export default class domPanZoom {
     }
 
     if (handlers) {
-      document.removeEventListener('mouseup', handlers.mouseUpTouchEndEvent);
-      document.removeEventListener('touchend', handlers.mouseUpTouchEndEvent);
-      document.removeEventListener('mousemove', handlers.setPositionEvent);
-      document.removeEventListener('touchmove', handlers.setPositionEvent);
+      handlers.removeDocumentPanListeners();
     }
 
     this._destroyed = true;

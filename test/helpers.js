@@ -78,6 +78,17 @@ export function getTransform(content) {
   };
 }
 
+export function dispatchPageEvent(target, type, { pageX = 0, pageY = 0, cancelable = true } = {}) {
+  const event = new MouseEvent(type, {
+    bubbles: true,
+    cancelable
+  });
+  Object.defineProperty(event, 'pageX', { configurable: true, value: pageX });
+  Object.defineProperty(event, 'pageY', { configurable: true, value: pageY });
+  target.dispatchEvent(event);
+  return event;
+}
+
 export function dispatchWheel(
   target,
   { deltaY = -100, altKey = false, clientX = 400, clientY = 200 } = {}

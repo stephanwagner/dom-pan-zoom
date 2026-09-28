@@ -67,8 +67,8 @@ You can pass the following options into domPanZoom:
 | Option | Default |  |
 | --- | --- | --- |
 | `center` | `true` | Start with a centered position. This option overrides `initalPanX` and `initialPanY` |
-| `bounds` | `'contain'` | Set this option to `'contain'` or `'cover'` to limit the boundries of the panZoomElement to the wrapperElement. This works similar to the CSS property background-size: contain / cover. Setting this option might effect the option minZoom |
-| `minZoom` | `0.1` | Minimum zoom, `0.5` would be half the original size |
+| `bounds` | `'contain'` | Limit the panZoomElement to the wrapper, similar to CSS `background-size: contain` / `cover`. This can raise `minZoom` so the content still fits. Set to `false` to disable |
+| `minZoom` | `0.1` | Smallest zoom allowed (`0.5` is half size). After init, read `this.options.minZoom`: with `bounds: 'contain'` or `'cover'`, the library may raise this above the value you passed in |
 | `maxZoom` | `10` | Maximum zoom, `2` would be double the original size |
 | `panEnabled` | `true` | Allow user drag/touch panning |
 | `zoomEnabled` | `true` | Allow user wheel/pinch/double-click zooming |
@@ -159,9 +159,23 @@ myDomPanZoom = new domPanZoom({
 ```javascript
 new domPanZoom({
   wrapperElement: '#my-wrapper',
-  panZoomElement: '#my-container'
+  panZoomElement: '#my-container',
   onZoom: function (position) {
     console.log(this.zoom, position);
+  }
+});
+```
+
+Wheel and pinch zoom toward the cursor, so the view can stay off-center at minimum zoom. To snap back to the middle, compare against the effective minimum (`this.options.minZoom`), not only the number you passed in:
+
+```javascript
+new domPanZoom({
+  wrapperElement: '#my-wrapper',
+  panZoomElement: '#my-container',
+  onZoom: function () {
+    if (this.getZoom() === this.options.minZoom) {
+      this.center(true);
+    }
   }
 });
 ```

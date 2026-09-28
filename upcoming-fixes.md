@@ -18,11 +18,9 @@ Notes from a JavaScript best-practices review of dom-pan-zoom (post Phase 1 / sv
 
 `getWrapper()` / `getContainer()` now throw a clear `Error` when the option is missing, invalid, or a selector that matches nothing, before `init()` applies styles or attaches listeners.
 
-### 3. Scope document-level listeners to active interaction
+### 3. Scope document-level listeners to active interaction — DONE
 
-Each instance permanently attaches `mouseup` and `touchend` on `document`. With multiple instances on one page, every instance’s handler runs on any document mouseup.
-
-**Better:** attach document listeners only during an active drag/pinch; remove on release. (Partially done for `mousemove` / `touchmove`; `mouseup` / `touchend` still global and permanent.)
+Document `mousemove` / `touchmove` / `mouseup` / `touchend` / `touchcancel` are attached on pan start and removed on release (and in `destroy()` if a drag is still active).
 
 ### 4. Separate user config from computed state
 
@@ -109,9 +107,9 @@ Class is `domPanZoom` (camelCase) rather than conventional `DomPanZoom`. May be 
 
 ## Suggested order of work
 
-1. Fix math typos (#1)
-2. Constructor validation (#2)
-3. Document listener scoping (#3)
+1. Fix math typos (#1) — DONE
+2. Constructor validation (#2) — DONE
+3. Document listener scoping (#3) — DONE
 4. Split computed vs user zoom limits (#4)
 5. JSDoc on public API (#12)
 6. `AbortController` refactor (#5)
