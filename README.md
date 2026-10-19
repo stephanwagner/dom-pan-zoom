@@ -68,7 +68,7 @@ You can pass the following options into domPanZoom:
 | --- | --- | --- |
 | `center` | `true` | Start with a centered position. This option overrides `initalPanX` and `initialPanY` |
 | `bounds` | `'contain'` | Limit the panZoomElement to the wrapper, similar to CSS `background-size: contain` / `cover`. This can raise `minZoom` so the content still fits. Set to `false` to disable |
-| `minZoom` | `0.1` | Smallest zoom allowed (`0.5` is half size). After init, read `this.options.minZoom`: with `bounds: 'contain'` or `'cover'`, the library may raise this above the value you passed in |
+| `minZoom` | `0.1` | Smallest zoom allowed (`0.5` is half size). With `bounds: 'contain'` or `'cover'`, the library may enforce a higher minimum so the content still fits; read it with `.getMinZoom()`. `this.options.minZoom` always keeps the value you passed in |
 | `maxZoom` | `10` | Maximum zoom, `2` would be double the original size |
 | `panEnabled` | `true` | Allow user drag/touch panning |
 | `zoomEnabled` | `true` | Allow user wheel/pinch/double-click zooming |
@@ -105,6 +105,8 @@ You can use the following methods:
 | `.getPanX()` | Returns the current horizontal position. You can pass `true` to get the actual pixel values, e.g. `.getPanX(true)` |
 | `.getPanY()` | Returns the current vertical position. You can pass `true` to get the actual pixel values, e.g. `.getPanY(true)` |
 | `.getZoom()` | Returns the current zoom level |
+| `.getMinZoom()` | Returns the effective minimum zoom. With `bounds: 'contain'` or `'cover'` this can be higher than the `minZoom` option, but never higher than `maxZoom` |
+| `.getMaxZoom()` | Returns the maximum zoom (the current `maxZoom` option) |
 
 | Setters |  |
 | --- | --- |
@@ -166,14 +168,14 @@ new domPanZoom({
 });
 ```
 
-Wheel and pinch zoom toward the cursor, so the view can stay off-center at minimum zoom. To snap back to the middle, compare against the effective minimum (`this.options.minZoom`), not only the number you passed in:
+Wheel and pinch zoom toward the cursor, so the view can stay off-center at minimum zoom. To snap back to the middle, compare against the effective minimum (`this.getMinZoom()`), not the `minZoom` option you passed in:
 
 ```javascript
 new domPanZoom({
   wrapperElement: '#my-wrapper',
   panZoomElement: '#my-container',
   onZoom: function () {
-    if (this.getZoom() === this.options.minZoom) {
+    if (this.getZoom() === this.getMinZoom()) {
       this.center(true);
     }
   }

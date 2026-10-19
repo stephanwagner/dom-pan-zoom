@@ -66,6 +66,83 @@ describe('domPanZoom API', () => {
     expect(getTransform(content)).not.toBeNull();
   });
 
+  it('bounds raise the effective minZoom without mutating options', () => {
+    const { content, instance } = setup({
+      bounds: 'contain',
+      minZoom: 0.1,
+      maxZoom: 5,
+      initialZoom: 1
+    });
+
+    expect(instance.getMinZoom()).toBe(1);
+    expect(instance.getMaxZoom()).toBe(5);
+    expect(instance.options.minZoom).toBe(0.1);
+    expect(instance.options.maxZoom).toBe(5);
+
+    setLayoutSize(content, 1600, 800);
+    instance.resize();
+
+    expect(instance.getMinZoom()).toBe(0.5);
+    expect(instance.options.minZoom).toBe(0.1);
+  });
+
+  it('effective zoom limits match options when bounds are disabled', () => {
+    const { instance } = setup({ bounds: false, minZoom: 0.2, maxZoom: 4 });
+
+    expect(instance.getMinZoom()).toBe(0.2);
+    expect(instance.getMaxZoom()).toBe(4);
+  });
+
+  it('cover bounds raise the effective minZoom to fill the wrapper', () => {
+    const { content, instance } = setup({ bounds: 'cover', minZoom: 0.1 });
+
+    setLayoutSize(content, 1600, 400);
+    instance.resize();
+
+    expect(instance.getMinZoom()).toBe(1);
+    expect(instance.options.minZoom).toBe(0.1);
+  });
+
+  it('effective minZoom never exceeds maxZoom when bounds need more', () => {
+    const { content, instance } = setup({ bounds: 'cover', maxZoom: 1 });
+
+    setLayoutSize(content, 400, 400);
+    instance.resize();
+
+    expect(instance.getMinZoom()).toBe(1);
+    expect(instance.getMaxZoom()).toBe(1);
+    expect(instance.getZoom()).toBe(instance.getMinZoom());
+  });
+
+  it('getMinZoom returns the minZoom option before bounds are computed', () => {
+    let minZoomDuringInit;
+    class Probe extends domPanZoom {
+      // attachEvents() runs in init() before adjustMinZoomForBounds()
+      attachEvents() {
+        minZoomDuringInit = this.getMinZoom();
+        super.attachEvents();
+      }
+    }
+
+    const { wrapper, content } = setup();
+    const probe = new Probe({ wrapperElement: wrapper, panZoomElement: content, minZoom: 0.3 });
+    probe.destroy();
+
+    expect(minZoomDuringInit).toBe(0.3);
+  });
+
+  it('zoom option changes apply without calling resize', () => {
+    const { instance } = setup({ bounds: false, minZoom: 0.1, maxZoom: 10 });
+
+    instance.options.maxZoom = 2;
+    instance.zoomTo(5, true);
+    expect(instance.getZoom()).toBe(2);
+
+    instance.options.minZoom = 0.5;
+    instance.zoomTo(0.2, true);
+    expect(instance.getZoom()).toBe(0.5);
+  });
+
   it('zoomToAt changes zoom while updating the transform', () => {
     const { content, instance } = setup({ initialZoom: 1 });
 
