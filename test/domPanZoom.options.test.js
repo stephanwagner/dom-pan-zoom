@@ -213,6 +213,29 @@ describe('domPanZoom options', () => {
     expect(instance._documentPanListening).toBe(false);
   });
 
+  it('destroy resets the cursors set by an in-progress drag', () => {
+    const { wrapper, instance } = setup();
+
+    dispatchPageEvent(wrapper, 'mousedown', { pageX: 100, pageY: 100 });
+    expect(document.body.style.cursor).toBe('grabbing');
+    expect(wrapper.style.cursor).toBe('grabbing');
+
+    instance.destroy();
+
+    expect(document.body.style.cursor).toBe('');
+    expect(wrapper.style.cursor).toBe('');
+  });
+
+  it('init() after destroy() restores the grab cursor', () => {
+    const { wrapper, instance } = setup({ panEnabled: true });
+
+    instance.destroy();
+    expect(wrapper.style.cursor).toBe('');
+
+    instance.init();
+    expect(wrapper.style.cursor).toBe('grab');
+  });
+
   it('destroy removes wrapper listeners', () => {
     const { wrapper, instance } = setup({ initialZoom: 1 });
 

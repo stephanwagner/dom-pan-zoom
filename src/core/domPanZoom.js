@@ -483,6 +483,12 @@ export default class domPanZoom {
       return this;
     }
 
+    // Aborting removes the mouseup handler, so reset a mid-drag cursor here
+    if (this._documentPanListening) {
+      document.body.style.cursor = '';
+    }
+    this.getWrapper().style.cursor = '';
+
     this._abort.abort();
     this._abort = null;
     this._documentPanListening = false;
