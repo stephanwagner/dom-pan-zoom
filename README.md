@@ -119,6 +119,7 @@ You can use the following methods:
 | `.reset()` | Reset to the initial zoom and pan. Pass `true` for instant reset, or an options object with `zoom`, `panX`, `panY`, `center`, and `instant` |
 | `.resize()` | Recalculate bounds after the wrapper or panZoom element changes size |
 | `.destroy()` | Remove all event listeners. Call before creating a new instance on the same wrapper and panZoom element |
+| `.init()` | Called by the constructor. Has no effect on an initialized instance. After `.destroy()`, attaches the event listeners again and reapplies the initial zoom and pan |
 
 ### E.g.
 

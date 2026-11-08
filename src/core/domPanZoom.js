@@ -81,8 +81,13 @@ export default class domPanZoom {
     this.init();
   }
 
-  // Initialize
+  // Initialize. Has no effect on an initialized instance, so listeners are
+  // never attached twice. After destroy(), initializes the instance again
   init() {
+    if (this._initialized) {
+      return this;
+    }
+
     // Init containers
     const wrapper = this.getWrapper();
     const container = this.getContainer();
@@ -95,9 +100,12 @@ export default class domPanZoom {
     this.evCache = [];
     this.pinchDiffCache = 0;
     this.pinchMoveCache = null;
+    this.previousEvent = null;
+    this.blockPan = false;
 
     // Attach events
     this.attachEvents();
+    this._initialized = true;
 
     // Compute the minimum zoom required by bounds
     this.adjustMinZoomForBounds();
@@ -118,6 +126,8 @@ export default class domPanZoom {
 
     // Trigger event
     this.fireEvent('onInit', this.getPosition());
+
+    return this;
   }
 
   // Update the wrapper cursor based on panEnabled
@@ -192,6 +202,10 @@ export default class domPanZoom {
 
   // Attach events
   attachEvents() {
+    // Aborting this signal in destroy() removes every listener below
+    this._abort = new AbortController();
+    const { signal } = this._abort;
+
     // Event while mouse moving
     const setPositionEvent = (ev) => {
       if (this.blockPan == true || !this.options.panEnabled) {
@@ -230,19 +244,24 @@ export default class domPanZoom {
 
       this._documentPanListening = true;
       document.addEventListener('mousemove', setPositionEvent, {
-        passive: true
+        passive: true,
+        signal
       });
       document.addEventListener('touchmove', setPositionEvent, {
-        passive: true
+        passive: true,
+        signal
       });
       document.addEventListener('mouseup', mouseUpTouchEndEvent, {
-        passive: true
+        passive: true,
+        signal
       });
       document.addEventListener('touchend', mouseUpTouchEndEvent, {
-        passive: true
+        passive: true,
+        signal
       });
       document.addEventListener('touchcancel', mouseUpTouchEndEvent, {
-        passive: true
+        passive: true,
+        signal
       });
     };
 
@@ -279,11 +298,13 @@ export default class domPanZoom {
     };
 
     this.getWrapper().addEventListener('mousedown', mouseDownTouchStartEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     this.getWrapper().addEventListener('touchstart', mouseDownTouchStartEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     // Mouse wheel events
@@ -325,7 +346,8 @@ export default class domPanZoom {
     };
 
     this.getWrapper().addEventListener('wheel', mouseWheelEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     const doubleClickEvent = (ev) => {
@@ -345,7 +367,8 @@ export default class domPanZoom {
     };
 
     this.getWrapper().addEventListener('dblclick', doubleClickEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     // Pinch events
@@ -369,7 +392,8 @@ export default class domPanZoom {
     };
 
     this.getWrapper().addEventListener('pointerdown', pointerDownEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     const pointerMoveEvent = (ev) => {
@@ -426,7 +450,8 @@ export default class domPanZoom {
     };
 
     this.getWrapper().addEventListener('pointermove', pointerMoveEvent, {
-      passive: false
+      passive: false,
+      signal
     });
 
     const pointerUpEvent = (ev) => {
@@ -445,53 +470,23 @@ export default class domPanZoom {
     ['pointerup', 'pointercancel', 'pointerout', 'pointerleave'].forEach(
       (event) => {
         this.getWrapper().addEventListener(event, pointerUpEvent, {
-          passive: false
+          passive: false,
+          signal
         });
       }
     );
-
-    this._handlers = {
-      setPositionEvent,
-      mouseDownTouchStartEvent,
-      mouseUpTouchEndEvent,
-      mouseWheelEvent,
-      doubleClickEvent,
-      pointerDownEvent,
-      pointerMoveEvent,
-      pointerUpEvent,
-      removeDocumentPanListeners
-    };
   }
 
   // Remove event listeners so the instance can be replaced safely
   destroy() {
-    if (this._destroyed) {
+    if (!this._initialized) {
       return this;
     }
 
-    const wrapper = this.getWrapper();
-    const handlers = this._handlers;
-
-    if (wrapper && handlers) {
-      wrapper.removeEventListener('mousedown', handlers.mouseDownTouchStartEvent);
-      wrapper.removeEventListener('touchstart', handlers.mouseDownTouchStartEvent);
-      wrapper.removeEventListener('wheel', handlers.mouseWheelEvent);
-      wrapper.removeEventListener('dblclick', handlers.doubleClickEvent);
-      wrapper.removeEventListener('pointerdown', handlers.pointerDownEvent);
-      wrapper.removeEventListener('pointermove', handlers.pointerMoveEvent);
-
-      ['pointerup', 'pointercancel', 'pointerout', 'pointerleave'].forEach(
-        (event) => {
-          wrapper.removeEventListener(event, handlers.pointerUpEvent);
-        }
-      );
-    }
-
-    if (handlers) {
-      handlers.removeDocumentPanListeners();
-    }
-
-    this._destroyed = true;
+    this._abort.abort();
+    this._abort = null;
+    this._documentPanListening = false;
+    this._initialized = false;
     return this;
   }
 

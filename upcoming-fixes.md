@@ -30,13 +30,13 @@ Document `mousemove` / `touchmove` / `mouseup` / `touchend` / `touchcancel` are 
 
 ## Medium priority — API & consistency
 
-### 5. Use `AbortController` in `destroy()`
+### 5. Use `AbortController` in `destroy()` — DONE
 
-`destroy()` manually removes eight handler references. **Alternative:** pass `{ signal: this._abort.signal }` to all `addEventListener` calls; `destroy()` calls `this._abort.abort()`. Simpler and harder to leak a listener.
+`attachEvents()` creates `this._abort` and passes its signal to every wrapper and document listener. `destroy()` calls `this._abort.abort()`, so the stored `_handlers` map and the manual `removeEventListener` calls are gone.
 
-### 6. Guard against double `init()`
+### 6. Guard against double `init()` — DONE
 
-Calling `init()` twice (or constructing twice without `destroy()`) stacks listeners again. Add `if (this._initialized) return` or make re-init explicit via a documented `update()` path.
+`init()` returns early while `this._initialized` is set, so calling it twice no longer stacks listeners. `destroy()` clears the flag (replacing `_destroyed`), so `init()` after `destroy()` re-initializes the same instance. Constructing a second instance on the same elements without `destroy()` is still not detected; the README documents calling `destroy()` first.
 
 ### 7. Standardize overloaded method signatures
 
@@ -110,8 +110,9 @@ Class is `domPanZoom` (camelCase) rather than conventional `DomPanZoom`. May be 
 3. Document listener scoping (#3) — DONE
 4. Split computed vs user zoom limits (#4) — DONE
 5. JSDoc on public API (#12)
-6. `AbortController` refactor (#5)
-7. Remaining consistency items as time allows
+6. `AbortController` refactor (#5) — DONE
+7. Guard against double `init()` (#6) — DONE
+8. Remaining consistency items as time allows
 
 ---
 

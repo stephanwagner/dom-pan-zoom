@@ -200,25 +200,49 @@ describe('domPanZoom options', () => {
   });
 
   it('destroy removes in-progress document pan listeners', () => {
-    const removeSpy = vi.spyOn(document, 'removeEventListener');
-    const { wrapper, instance } = setup();
+    const { wrapper, instance } = setup({ initialZoom: 1, bounds: false });
 
-    wrapper.dispatchEvent(
-      new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        pageX: 100,
-        pageY: 100
-      })
-    );
+    dispatchPageEvent(wrapper, 'mousedown', { pageX: 100, pageY: 100 });
+    dispatchPageEvent(document, 'mousemove', { pageX: 100, pageY: 100 });
 
     instance.destroy();
+    const xBefore = instance.getPosition().x;
+    dispatchPageEvent(document, 'mousemove', { pageX: 140, pageY: 100 });
 
-    const removed = removeSpy.mock.calls.map(([type]) => type);
-    expect(removed).toEqual(expect.arrayContaining(['mousemove', 'mouseup', 'touchmove', 'touchend']));
+    expect(instance.getPosition().x).toBe(xBefore);
     expect(instance._documentPanListening).toBe(false);
+  });
 
-    removeSpy.mockRestore();
+  it('destroy removes wrapper listeners', () => {
+    const { wrapper, instance } = setup({ initialZoom: 1 });
+
+    instance.destroy();
+    dispatchWheel(wrapper, { deltaY: -120 });
+
+    expect(instance.getZoom()).toBe(1);
+  });
+
+  it('calling init() again does not attach listeners twice', () => {
+    const onZoom = vi.fn();
+    const { wrapper, instance } = setup({ initialZoom: 1, onZoom });
+
+    expect(instance.init()).toBe(instance);
+    dispatchWheel(wrapper, { deltaY: -120 });
+
+    expect(onZoom).toHaveBeenCalledTimes(1);
+  });
+
+  it('init() after destroy() attaches listeners again', () => {
+    const onZoom = vi.fn();
+    const { wrapper, instance } = setup({ initialZoom: 1, onZoom });
+
+    instance.destroy();
+    instance.init();
+    instance.init();
+    dispatchWheel(wrapper, { deltaY: -120 });
+
+    expect(onZoom).toHaveBeenCalledTimes(1);
+    expect(instance.getZoom()).toBeGreaterThan(1);
   });
 
   it('destroy removes listeners so a replaced instance respects new options', () => {
