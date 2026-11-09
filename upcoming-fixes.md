@@ -50,16 +50,9 @@ zoomIn({ step: 50, instant: true })
 
 All loose `==` comparisons now use `===`: the `bounds` and `zoom` string checks (`'cover'`, `'contain'`), `blockPan`, `evCache.length`, and the `pointerId` lookups. None of them relied on type coercion.
 
-### 9. Replace side-effect expressions with `if` blocks
+### 9. Replace side-effect expressions with `if` blocks — DONE
 
-Examples in `setPosition` and `pan`:
-
-```javascript
-this.x < upperOffsetX && (this.x = upperOffsetX);
-direction === 'left' && (this.x += panWidth * -1);
-```
-
-Clearer as normal `if` statements for readability and debugging.
+The `cond && (x = …)` expressions in `setPosition()`, `pan()`, `adjustPositionByZoom()` and `fireEvent()` are now plain `if` statements. `pan()` uses an `if` / `else if` chain because the directions are mutually exclusive.
 
 ### 10. Extract shared bounds / fit math
 

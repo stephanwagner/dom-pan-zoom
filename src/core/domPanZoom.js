@@ -154,7 +154,9 @@ export default class domPanZoom {
 
   // Fire an event from the options
   fireEvent(event, pass) {
-    this.options[event] && this.options[event].bind(this)(pass);
+    if (this.options[event]) {
+      this.options[event].bind(this)(pass);
+    }
   }
 
   // Recalculate the minimum zoom required by bounds, leaving this.options
@@ -614,8 +616,12 @@ export default class domPanZoom {
       const lowerOffsetX = upperOffsetX * -1 + wrapperWidth - containerWidth;
 
       if (containerZoomWidth < wrapperWidth) {
-        this.x < upperOffsetX && (this.x = upperOffsetX);
-        this.x > lowerOffsetX && (this.x = lowerOffsetX);
+        if (this.x < upperOffsetX) {
+          this.x = upperOffsetX;
+        }
+        if (this.x > lowerOffsetX) {
+          this.x = lowerOffsetX;
+        }
       } else {
         this.x = Math.min(this.x, upperOffsetX);
         this.x = Math.max(this.x, lowerOffsetX);
@@ -625,8 +631,12 @@ export default class domPanZoom {
       const lowerOffsetY = upperOffsetY * -1 + wrapperHeight - containerHeight;
 
       if (containerZoomHeight < wrapperHeight) {
-        this.y < upperOffsetY && (this.y = upperOffsetY);
-        this.y > lowerOffsetY && (this.y = lowerOffsetY);
+        if (this.y < upperOffsetY) {
+          this.y = upperOffsetY;
+        }
+        if (this.y > lowerOffsetY) {
+          this.y = lowerOffsetY;
+        }
       } else {
         this.y = Math.min(this.y, upperOffsetY);
         this.y = Math.max(this.y, lowerOffsetY);
@@ -838,11 +848,19 @@ export default class domPanZoom {
     const maxOffsetX = container.clientWidth * 0.5 * currentZoom;
     const maxOffsetY = container.clientHeight * 0.5 * currentZoom;
 
-    x > maxOffsetX && (x = Math.min(x, maxOffsetX));
-    x < maxOffsetX * -1 && (x = Math.max(x, maxOffsetX * -1));
+    if (x > maxOffsetX) {
+      x = maxOffsetX;
+    }
+    if (x < -maxOffsetX) {
+      x = -maxOffsetX;
+    }
 
-    y > maxOffsetY && (y = Math.min(y, maxOffsetY));
-    y < maxOffsetY * -1 && (y = Math.max(y, maxOffsetY * -1));
+    if (y > maxOffsetY) {
+      y = maxOffsetY;
+    }
+    if (y < -maxOffsetY) {
+      y = -maxOffsetY;
+    }
 
     this.x += x * zoomGrowth;
     this.y += y * zoomGrowth;
@@ -934,10 +952,15 @@ export default class domPanZoom {
     const panWidth = ((container.clientWidth * step) / 100) * this.zoom;
     const panHeight = ((container.clientHeight * step) / 100) * this.zoom;
 
-    direction === 'left' && (this.x += panWidth * -1);
-    direction === 'right' && (this.x += panWidth);
-    direction === 'up' && (this.y += panHeight * -1);
-    direction === 'down' && (this.y += panHeight);
+    if (direction === 'left') {
+      this.x -= panWidth;
+    } else if (direction === 'right') {
+      this.x += panWidth;
+    } else if (direction === 'up') {
+      this.y -= panHeight;
+    } else if (direction === 'down') {
+      this.y += panHeight;
+    }
 
     // Update position
     this.setPosition(instant);
