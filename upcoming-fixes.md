@@ -66,9 +66,9 @@ Option exists in defaults but is not wired up. Either implement (page scroll vs 
 
 ## Lower priority — polish & DX
 
-### 12. JSDoc or TypeScript definitions
+### 12. JSDoc or TypeScript definitions — JSDoc DONE
 
-Public options and methods would benefit from `/** @param ... */` comments or a shipped `.d.ts`. High value for svgMap and other consumers; low implementation cost.
+The options, the position object, the event callbacks and every public method documented in the README now have JSDoc in `src/core/domPanZoom.js`. A shipped `.d.ts` is still open; it could be generated from the JSDoc with `tsc --allowJs --declaration --emitDeclarationOnly`.
 
 ### 13. Class naming
 
@@ -102,7 +102,7 @@ Class is `domPanZoom` (camelCase) rather than conventional `DomPanZoom`. May be 
 2. Constructor validation (#2) — DONE
 3. Document listener scoping (#3) — DONE
 4. Split computed vs user zoom limits (#4) — DONE
-5. JSDoc on public API (#12)
+5. JSDoc on public API (#12) — DONE
 6. `AbortController` refactor (#5) — DONE
 7. Guard against double `init()` (#6) — DONE
 8. Remaining consistency items as time allows
