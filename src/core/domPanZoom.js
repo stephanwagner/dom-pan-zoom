@@ -184,7 +184,7 @@ export default class domPanZoom {
     const minZoomX = maxWidth / panZoomWidth;
     const minZoomY = maxHeight / panZoomHeight;
 
-    if (this.options.bounds == 'cover') {
+    if (this.options.bounds === 'cover') {
       this.boundsMinZoom = Math.max(minZoomX, minZoomY);
     } else {
       this.boundsMinZoom = Math.min(minZoomX, minZoomY);
@@ -208,7 +208,7 @@ export default class domPanZoom {
 
     // Event while mouse moving
     const setPositionEvent = (ev) => {
-      if (this.blockPan == true || !this.options.panEnabled) {
+      if (this.blockPan === true || !this.options.panEnabled) {
         return;
       }
 
@@ -378,7 +378,7 @@ export default class domPanZoom {
       this.xCache = this.x;
       this.yCache = this.y;
 
-      if (this.evCache.length == 2) {
+      if (this.evCache.length === 2) {
         this.blockPan = true;
         this.pinchDiffCache = this.getTouchEventsDistance(
           this.evCache[0],
@@ -398,14 +398,14 @@ export default class domPanZoom {
 
     const pointerMoveEvent = (ev) => {
       for (let i = 0; i < this.evCache.length; i++) {
-        if (ev.pointerId == this.evCache[i].pointerId) {
+        if (ev.pointerId === this.evCache[i].pointerId) {
           this.evCache[i] = ev;
           break;
         }
       }
 
       // Proceed if two touch gestures detected
-      if (this.evCache.length == 2 && this.options.zoomEnabled) {
+      if (this.evCache.length === 2 && this.options.zoomEnabled) {
         // Calculate distance between fingers
         let pinchDiff = this.getTouchEventsDistance(
           this.evCache[0],
@@ -456,7 +456,7 @@ export default class domPanZoom {
 
     const pointerUpEvent = (ev) => {
       for (var i = 0; i < this.evCache.length; i++) {
-        if (this.evCache[i].pointerId == ev.pointerId) {
+        if (this.evCache[i].pointerId === ev.pointerId) {
           this.evCache.splice(i, 1);
           break;
         }
@@ -655,7 +655,7 @@ export default class domPanZoom {
   // Sanitize zoom value
   sanitizeZoom(zoom) {
     // Get values for 'cover' and 'contain'
-    if (zoom == 'cover' || zoom == 'contain') {
+    if (zoom === 'cover' || zoom === 'contain') {
       const wrapper = this.getWrapper();
       const container = this.getContainer();
 
@@ -671,7 +671,7 @@ export default class domPanZoom {
       // TODO is first cebter OK?
       this.center(true, true);
 
-      if (zoom == 'cover') {
+      if (zoom === 'cover') {
         zoom = Math.max(minZoomX, minZoomY);
       } else {
         zoom = Math.min(minZoomX, minZoomY);

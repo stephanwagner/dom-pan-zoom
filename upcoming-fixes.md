@@ -46,9 +46,9 @@ Patterns like `zoomIn(true)`, `reset({ zoom: 2 })`, `panLeft(50, true)` are flex
 zoomIn({ step: 50, instant: true })
 ```
 
-### 8. Use strict equality
+### 8. Use strict equality — DONE
 
-Replace `==` with `===` for `bounds`, `zoom` string checks (`'cover'`, `'contain'`), etc., unless loose equality is intentional.
+All loose `==` comparisons now use `===`: the `bounds` and `zoom` string checks (`'cover'`, `'contain'`), `blockPan`, `evCache.length`, and the `pointerId` lookups. None of them relied on type coercion.
 
 ### 9. Replace side-effect expressions with `if` blocks
 
