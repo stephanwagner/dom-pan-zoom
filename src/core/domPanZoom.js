@@ -1,4 +1,80 @@
+/**
+ * Zoom level: a number (1 is the original size) or `'cover'` / `'contain'`
+ * to fit the panZoom element to the wrapper.
+ * @typedef {number | 'cover' | 'contain'} DomPanZoomZoom
+ */
+
+/**
+ * Current zoom and translation of the panZoom element.
+ * @typedef {object} DomPanZoomPosition
+ * @property {number} zoom Current zoom level.
+ * @property {number} x Horizontal translation in pixels.
+ * @property {number} y Vertical translation in pixels.
+ */
+
+/**
+ * Event callback. Called with `this` set to the domPanZoom instance.
+ * @callback DomPanZoomEventCallback
+ * @this {domPanZoom}
+ * @param {DomPanZoomPosition} position Position after the change.
+ * @returns {void}
+ */
+
+/**
+ * Options for the domPanZoom constructor. Only `wrapperElement` and
+ * `panZoomElement` are required.
+ * @typedef {object} DomPanZoomOptions
+ * @property {Element | string} wrapperElement The wrapper element, or a
+ *   selector for it. The wrapper clips the panZoom element.
+ * @property {Element | string} panZoomElement The element to pan and zoom,
+ *   or a selector for it.
+ * @property {boolean} [center=true] Start with a centered position. Overrides
+ *   `initialPanX` and `initialPanY`.
+ * @property {'contain' | 'cover' | false} [bounds='contain'] Limit the
+ *   panZoom element to the wrapper, similar to CSS `background-size`. Can
+ *   raise the effective minimum zoom, see {@link domPanZoom#getMinZoom}.
+ *   `false` disables bounds.
+ * @property {number} [minZoom=0.1] Minimum zoom.
+ * @property {number} [maxZoom=10] Maximum zoom.
+ * @property {boolean} [panEnabled=true] Allow panning by mouse drag or touch.
+ * @property {boolean} [zoomEnabled=true] Allow zooming by wheel, pinch or
+ *   double-click.
+ * @property {number} [panStep=10] Default step in percent for `panLeft()`,
+ *   `panRight()`, `panUp()` and `panDown()`.
+ * @property {number} [zoomStep=50] Default step in percent for `zoomIn()`
+ *   and `zoomOut()`.
+ * @property {number} [zoomSpeedWheel=1] Mouse wheel zoom speed.
+ * @property {boolean | ((ev: WheelEvent) => boolean)} [mouseWheelRequiresKey=false]
+ *   When `true`, wheel zoom requires alt, ctrl, meta or shift. A function
+ *   receives the wheel event and returns whether to zoom.
+ * @property {boolean} [dblClickZoomEnabled=false] Zoom in at the cursor on
+ *   double-click.
+ * @property {number} [zoomSpeedPinch=4] Pinch zoom speed.
+ * @property {DomPanZoomZoom} [initialZoom='contain'] Initial zoom level.
+ * @property {number} [initialPanX=0] Initial horizontal pan in percent.
+ *   Ignored while `center` is `true`.
+ * @property {number} [initialPanY=0] Initial vertical pan in percent.
+ *   Ignored while `center` is `true`.
+ * @property {number} [transitionSpeed=400] Transition duration in
+ *   milliseconds for non-instant pans and zooms.
+ * @property {DomPanZoomEventCallback | null} [onInit=null] Called once after
+ *   initialization.
+ * @property {DomPanZoomEventCallback | null} [onChange=null] Called whenever
+ *   the position is applied.
+ * @property {DomPanZoomEventCallback | null} [onZoom=null] Called after zooming.
+ * @property {DomPanZoomEventCallback | null} [onPan=null] Called after panning.
+ */
+
+/**
+ * Pan and zoom any DOM element inside a wrapper element.
+ */
 export default class domPanZoom {
+  /**
+   * Create an instance and initialize it.
+   * @param {DomPanZoomOptions} options
+   * @throws {Error} When `wrapperElement` or `panZoomElement` is missing, is
+   *   not an Element, or is a selector that matches nothing.
+   */
   constructor(options = {}) {
     const defaultOptions = {
       // The wrapper and container element
@@ -81,8 +157,13 @@ export default class domPanZoom {
     this.init();
   }
 
-  // Initialize. Has no effect on an initialized instance, so listeners are
-  // never attached twice. After destroy(), initializes the instance again
+  /**
+   * Initialize the instance. The constructor calls this. Has no effect on an
+   * initialized instance, so listeners are never attached twice. After
+   * {@link domPanZoom#destroy}, attaches the listeners again and reapplies
+   * the initial zoom and pan.
+   * @returns {this}
+   */
   init() {
     if (this._initialized) {
       return this;
@@ -154,7 +235,9 @@ export default class domPanZoom {
 
   // Fire an event from the options
   fireEvent(event, pass) {
-    this.options[event] && this.options[event].bind(this)(pass);
+    if (this.options[event]) {
+      this.options[event].bind(this)(pass);
+    }
   }
 
   // Recalculate the minimum zoom required by bounds, leaving this.options
@@ -184,14 +267,19 @@ export default class domPanZoom {
     const minZoomX = maxWidth / panZoomWidth;
     const minZoomY = maxHeight / panZoomHeight;
 
-    if (this.options.bounds == 'cover') {
+    if (this.options.bounds === 'cover') {
       this.boundsMinZoom = Math.max(minZoomX, minZoomY);
     } else {
       this.boundsMinZoom = Math.min(minZoomX, minZoomY);
     }
   }
 
-  // Recalculate bounds after the wrapper or panZoom element changes size
+  /**
+   * Recalculate bounds after the wrapper or panZoom element changes size, or
+   * after changing `options.bounds`. Clamps the current zoom and position to
+   * the new limits.
+   * @returns {this}
+   */
   resize() {
     const zoom = this.zoom;
     this.adjustMinZoomForBounds();
@@ -208,7 +296,7 @@ export default class domPanZoom {
 
     // Event while mouse moving
     const setPositionEvent = (ev) => {
-      if (this.blockPan == true || !this.options.panEnabled) {
+      if (this.blockPan === true || !this.options.panEnabled) {
         return;
       }
 
@@ -378,7 +466,7 @@ export default class domPanZoom {
       this.xCache = this.x;
       this.yCache = this.y;
 
-      if (this.evCache.length == 2) {
+      if (this.evCache.length === 2) {
         this.blockPan = true;
         this.pinchDiffCache = this.getTouchEventsDistance(
           this.evCache[0],
@@ -398,14 +486,14 @@ export default class domPanZoom {
 
     const pointerMoveEvent = (ev) => {
       for (let i = 0; i < this.evCache.length; i++) {
-        if (ev.pointerId == this.evCache[i].pointerId) {
+        if (ev.pointerId === this.evCache[i].pointerId) {
           this.evCache[i] = ev;
           break;
         }
       }
 
       // Proceed if two touch gestures detected
-      if (this.evCache.length == 2 && this.options.zoomEnabled) {
+      if (this.evCache.length === 2 && this.options.zoomEnabled) {
         // Calculate distance between fingers
         let pinchDiff = this.getTouchEventsDistance(
           this.evCache[0],
@@ -456,7 +544,7 @@ export default class domPanZoom {
 
     const pointerUpEvent = (ev) => {
       for (var i = 0; i < this.evCache.length; i++) {
-        if (this.evCache[i].pointerId == ev.pointerId) {
+        if (this.evCache[i].pointerId === ev.pointerId) {
           this.evCache.splice(i, 1);
           break;
         }
@@ -477,7 +565,12 @@ export default class domPanZoom {
     );
   }
 
-  // Remove event listeners so the instance can be replaced safely
+  /**
+   * Remove all event listeners and reset the cursors. Call before creating a
+   * new instance on the same elements. {@link domPanZoom#init} re-initializes
+   * a destroyed instance.
+   * @returns {this}
+   */
   destroy() {
     if (!this._initialized) {
       return this;
@@ -586,7 +679,10 @@ export default class domPanZoom {
     };
   }
 
-  // Get current position values
+  /**
+   * Get the current zoom and translation.
+   * @returns {DomPanZoomPosition}
+   */
   getPosition() {
     return {
       zoom: this.zoom,
@@ -614,8 +710,12 @@ export default class domPanZoom {
       const lowerOffsetX = upperOffsetX * -1 + wrapperWidth - containerWidth;
 
       if (containerZoomWidth < wrapperWidth) {
-        this.x < upperOffsetX && (this.x = upperOffsetX);
-        this.x > lowerOffsetX && (this.x = lowerOffsetX);
+        if (this.x < upperOffsetX) {
+          this.x = upperOffsetX;
+        }
+        if (this.x > lowerOffsetX) {
+          this.x = lowerOffsetX;
+        }
       } else {
         this.x = Math.min(this.x, upperOffsetX);
         this.x = Math.max(this.x, lowerOffsetX);
@@ -625,8 +725,12 @@ export default class domPanZoom {
       const lowerOffsetY = upperOffsetY * -1 + wrapperHeight - containerHeight;
 
       if (containerZoomHeight < wrapperHeight) {
-        this.y < upperOffsetY && (this.y = upperOffsetY);
-        this.y > lowerOffsetY && (this.y = lowerOffsetY);
+        if (this.y < upperOffsetY) {
+          this.y = upperOffsetY;
+        }
+        if (this.y > lowerOffsetY) {
+          this.y = lowerOffsetY;
+        }
       } else {
         this.y = Math.min(this.y, upperOffsetY);
         this.y = Math.max(this.y, lowerOffsetY);
@@ -655,7 +759,7 @@ export default class domPanZoom {
   // Sanitize zoom value
   sanitizeZoom(zoom) {
     // Get values for 'cover' and 'contain'
-    if (zoom == 'cover' || zoom == 'contain') {
+    if (zoom === 'cover' || zoom === 'contain') {
       const wrapper = this.getWrapper();
       const container = this.getContainer();
 
@@ -671,7 +775,7 @@ export default class domPanZoom {
       // TODO is first cebter OK?
       this.center(true, true);
 
-      if (zoom == 'cover') {
+      if (zoom === 'cover') {
         zoom = Math.max(minZoomX, minZoomY);
       } else {
         zoom = Math.min(minZoomX, minZoomY);
@@ -693,13 +797,20 @@ export default class domPanZoom {
     return zoom;
   }
 
-  // Getter for zoom
+  /**
+   * Get the current zoom level.
+   * @returns {number}
+   */
   getZoom() {
     return this.zoom;
   }
 
-  // Getter for the effective minimum zoom (may be raised by bounds, but
-  // never above maxZoom, which wins when the two conflict)
+  /**
+   * Get the effective minimum zoom. Bounds can raise it above
+   * `options.minZoom` so the content still fits, but it never exceeds
+   * {@link domPanZoom#getMaxZoom}, which wins when the two conflict.
+   * @returns {number}
+   */
   getMinZoom() {
     return Math.min(
       Math.max(this.options.minZoom, this.boundsMinZoom),
@@ -707,12 +818,26 @@ export default class domPanZoom {
     );
   }
 
-  // Getter for the maximum zoom
+  /**
+   * Get the maximum zoom (the current `maxZoom` option).
+   * @returns {number}
+   */
   getMaxZoom() {
     return this.options.maxZoom;
   }
 
-  // Reset to the initial zoom and pan position
+  /**
+   * Reset to the initial zoom and pan from the options.
+   * @param {boolean | object} [arg] `true` to reset instantly, or an object
+   *   that overrides the initial values.
+   * @param {DomPanZoomZoom} [arg.zoom] Zoom to reset to.
+   * @param {number} [arg.panX] Horizontal pan in percent. Turns off centering.
+   * @param {number} [arg.panY] Vertical pan in percent. Turns off centering.
+   * @param {boolean} [arg.center] Center the content. Takes precedence over
+   *   `panX` and `panY`.
+   * @param {boolean} [arg.instant=false] Skip the transition.
+   * @returns {this}
+   */
   reset(arg) {
     let instant = false;
     let zoom = this.options.initialZoom;
@@ -754,7 +879,12 @@ export default class domPanZoom {
     return this;
   }
 
-  // Zoom to
+  /**
+   * Zoom to a level, keeping the center of the wrapper fixed.
+   * @param {DomPanZoomZoom} zoom Target zoom, clamped to the zoom limits.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   zoomTo(zoom, instant) {
     // Sanitize zoom
     zoom = this.sanitizeZoom(zoom);
@@ -774,7 +904,17 @@ export default class domPanZoom {
     return this;
   }
 
-  // Zoom to a level while keeping a content point fixed on screen
+  /**
+   * Zoom to a level while keeping a point of the content fixed on screen.
+   * @param {DomPanZoomZoom} zoom Target zoom, clamped to the zoom limits.
+   * @param {object} point Point in the unzoomed panZoom element.
+   * @param {number} point.x Horizontal coordinate, in pixels or percent.
+   * @param {number} point.y Vertical coordinate, in pixels or percent.
+   * @param {boolean} [point.percent=false] Read `x` and `y` as percent of the
+   *   panZoom element's size.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   zoomToAt(zoom, point, instant) {
     zoom = this.sanitizeZoom(zoom);
 
@@ -798,12 +938,24 @@ export default class domPanZoom {
     return this;
   }
 
-  // Zoom in
+  /**
+   * Zoom in by a percentage of the current zoom.
+   * @param {number | boolean} [step=options.zoomStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   zoomIn(step, instant) {
     return this.zoomInOut(step, instant, 'in');
   }
 
-  // Zoom out
+  /**
+   * Zoom out by a percentage of the current zoom.
+   * @param {number | boolean} [step=options.zoomStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   zoomOut(step, instant) {
     return this.zoomInOut(step, instant, 'out');
   }
@@ -838,22 +990,41 @@ export default class domPanZoom {
     const maxOffsetX = container.clientWidth * 0.5 * currentZoom;
     const maxOffsetY = container.clientHeight * 0.5 * currentZoom;
 
-    x > maxOffsetX && (x = Math.min(x, maxOffsetX));
-    x < maxOffsetX * -1 && (x = Math.max(x, maxOffsetX * -1));
+    if (x > maxOffsetX) {
+      x = maxOffsetX;
+    }
+    if (x < -maxOffsetX) {
+      x = -maxOffsetX;
+    }
 
-    y > maxOffsetY && (y = Math.min(y, maxOffsetY));
-    y < maxOffsetY * -1 && (y = Math.max(y, maxOffsetY * -1));
+    if (y > maxOffsetY) {
+      y = maxOffsetY;
+    }
+    if (y < -maxOffsetY) {
+      y = -maxOffsetY;
+    }
 
     this.x += x * zoomGrowth;
     this.y += y * zoomGrowth;
   }
 
-  // Center container within wrapper
+  /**
+   * Center the panZoom element within the wrapper.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @param {boolean} [ignorePosition=false] Internal: update `x` and `y`
+   *   without applying the position.
+   * @returns {this}
+   */
   center(instant, ignorePosition) {
     return this.panTo(50, 50, instant, ignorePosition);
   }
 
-  // Getters for pan
+  /**
+   * Get the point of the content at the center of the wrapper.
+   * @param {boolean} [pixelValues=false] Return pixels in the zoomed content
+   *   instead of percent.
+   * @returns {{ x: number, y: number }}
+   */
   getPan(pixelValues) {
     return {
       x: this.getPanX(pixelValues),
@@ -861,6 +1032,11 @@ export default class domPanZoom {
     };
   }
 
+  /**
+   * Get the horizontal component of {@link domPanZoom#getPan}.
+   * @param {boolean} [pixelValues=false] Return pixels instead of percent.
+   * @returns {number}
+   */
   getPanX(pixelValues) {
     const wrapper = this.getWrapper();
     const container = this.getContainer();
@@ -870,6 +1046,11 @@ export default class domPanZoom {
     return pixelValues ? panX : percentX;
   }
 
+  /**
+   * Get the vertical component of {@link domPanZoom#getPan}.
+   * @param {boolean} [pixelValues=false] Return pixels instead of percent.
+   * @returns {number}
+   */
   getPanY(pixelValues) {
     const wrapper = this.getWrapper();
     const container = this.getContainer();
@@ -879,7 +1060,15 @@ export default class domPanZoom {
     return pixelValues ? panY : percentY;
   }
 
-  // Pan to position
+  /**
+   * Pan so the given point of the content is at the center of the wrapper.
+   * @param {number} x Horizontal position in percent (50 is the center).
+   * @param {number} y Vertical position in percent (50 is the center).
+   * @param {boolean} [instant=false] Skip the transition.
+   * @param {boolean} [ignorePosition=false] Internal: update `x` and `y`
+   *   without applying the position.
+   * @returns {this}
+   */
   panTo(x, y, instant, ignorePosition) {
     const wrapper = this.getWrapper();
     const container = this.getContainer();
@@ -907,18 +1096,46 @@ export default class domPanZoom {
     return this;
   }
 
+  /**
+   * Pan left by a percentage of the panZoom element's width.
+   * @param {number | boolean} [step=options.panStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   panLeft(step, instant) {
     return this.pan(step, instant, 'left');
   }
 
+  /**
+   * Pan right by a percentage of the panZoom element's width.
+   * @param {number | boolean} [step=options.panStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   panRight(step, instant) {
     return this.pan(step, instant, 'right');
   }
 
+  /**
+   * Pan up by a percentage of the panZoom element's height.
+   * @param {number | boolean} [step=options.panStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   panUp(step, instant) {
     return this.pan(step, instant, 'up');
   }
 
+  /**
+   * Pan down by a percentage of the panZoom element's height.
+   * @param {number | boolean} [step=options.panStep] Step in percent. Pass a
+   *   boolean here instead to use the default step and set `instant`.
+   * @param {boolean} [instant=false] Skip the transition.
+   * @returns {this}
+   */
   panDown(step, instant) {
     return this.pan(step, instant, 'down');
   }
@@ -934,10 +1151,15 @@ export default class domPanZoom {
     const panWidth = ((container.clientWidth * step) / 100) * this.zoom;
     const panHeight = ((container.clientHeight * step) / 100) * this.zoom;
 
-    direction === 'left' && (this.x += panWidth * -1);
-    direction === 'right' && (this.x += panWidth);
-    direction === 'up' && (this.y += panHeight * -1);
-    direction === 'down' && (this.y += panHeight);
+    if (direction === 'left') {
+      this.x -= panWidth;
+    } else if (direction === 'right') {
+      this.x += panWidth;
+    } else if (direction === 'up') {
+      this.y -= panHeight;
+    } else if (direction === 'down') {
+      this.y += panHeight;
+    }
 
     // Update position
     this.setPosition(instant);
