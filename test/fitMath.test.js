@@ -1,0 +1,48 @@
+import { describe, expect, it } from 'vitest';
+import { clampAxisToBounds, computeFitZoom } from '../src/core/fitMath.js';
+
+describe('computeFitZoom', () => {
+  const wrapper = { width: 400, height: 300 };
+  const container = { width: 800, height: 300 };
+
+  it('contain uses the smaller axis ratio', () => {
+    expect(computeFitZoom(wrapper, container, 'contain')).toBe(0.5);
+  });
+
+  it('cover uses the larger axis ratio', () => {
+    expect(computeFitZoom(wrapper, container, 'cover')).toBe(1);
+  });
+
+  it('treats any other mode as contain', () => {
+    expect(computeFitZoom(wrapper, container, true)).toBe(0.5);
+  });
+
+  it('returns 1 when the sizes already match', () => {
+    const size = { width: 200, height: 100 };
+    expect(computeFitZoom(size, size, 'contain')).toBe(1);
+    expect(computeFitZoom(size, size, 'cover')).toBe(1);
+  });
+});
+
+describe('clampAxisToBounds', () => {
+  // Wrapper 400px, container 200px
+  it('keeps a smaller zoomed container inside the wrapper', () => {
+    // zoom 1: allowed range is [0, 200]
+    expect(clampAxisToBounds(-50, 400, 200, 1)).toBe(0);
+    expect(clampAxisToBounds(100, 400, 200, 1)).toBe(100);
+    expect(clampAxisToBounds(250, 400, 200, 1)).toBe(200);
+  });
+
+  it('keeps a larger zoomed container covering the wrapper', () => {
+    // zoom 4: zoomed width 800, center-origin offset 300, range [-100, 300]
+    expect(clampAxisToBounds(-500, 400, 200, 4)).toBe(-100);
+    expect(clampAxisToBounds(0, 400, 200, 4)).toBe(0);
+    expect(clampAxisToBounds(500, 400, 200, 4)).toBe(300);
+  });
+
+  it('pins the position when the zoomed container fills the wrapper', () => {
+    // zoom 2: zoomed width 400 = wrapper, only offset 100 is allowed
+    expect(clampAxisToBounds(-50, 400, 200, 2)).toBe(100);
+    expect(clampAxisToBounds(250, 400, 200, 2)).toBe(100);
+  });
+});

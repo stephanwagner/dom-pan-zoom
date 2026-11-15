@@ -54,9 +54,9 @@ All loose `==` comparisons now use `===`: the `bounds` and `zoom` string checks 
 
 The `cond && (x = …)` expressions in `setPosition()`, `pan()`, `adjustPositionByZoom()` and `fireEvent()` are now plain `if` statements. `pan()` uses an `if` / `else if` chain because the directions are mutually exclusive.
 
-### 10. Extract shared bounds / fit math
+### 10. Extract shared bounds / fit math — DONE
 
-Fit/contain min-zoom logic appears in `adjustMinZoomForBounds()`, `sanitizeZoom()`, and related clamping in `setPosition()`. A single pure helper (e.g. `computeFitZoom(wrapper, container, mode)`) would reduce drift and is easy to unit test.
+`src/core/fitMath.js` holds two pure helpers with their own unit tests (`test/fitMath.test.js`): `computeFitZoom(wrapper, container, mode)` for the cover/contain zoom used by `adjustMinZoomForBounds()` and `sanitizeZoom()`, and `clampAxisToBounds(position, wrapperSize, containerSize, zoom)` for the per-axis clamping in `setPosition()`. The two clamping branches turned out to be the same clamp between `upperOffset` and `lowerOffset`, so they collapse into one. Behavior is unchanged, including `sanitizeZoom('cover' | 'contain')` still producing `Infinity` / `NaN` for an unmeasured (zero-size) container; only `adjustMinZoomForBounds()` guards against that.
 
 ### 11. Remove or implement `preferPageScroll`
 

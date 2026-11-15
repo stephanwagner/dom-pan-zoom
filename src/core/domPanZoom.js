@@ -1,3 +1,5 @@
+import { clampAxisToBounds, computeFitZoom } from './fitMath.js';
+
 /**
  * Zoom level: a number (1 is the original size) or `'cover'` / `'contain'`
  * to fit the panZoom element to the wrapper.
@@ -255,23 +257,29 @@ export default class domPanZoom {
       return;
     }
 
-    const maxWidth = wrapper.clientWidth;
-    const maxHeight = wrapper.clientHeight;
-    const panZoomWidth = container.clientWidth;
-    const panZoomHeight = container.clientHeight;
-
-    if (!panZoomWidth || !panZoomHeight) {
+    // Skip while the container is unmeasured (e.g. hidden), which would
+    // otherwise give an infinite minimum zoom
+    if (!container.clientWidth || !container.clientHeight) {
       return;
     }
 
-    const minZoomX = maxWidth / panZoomWidth;
-    const minZoomY = maxHeight / panZoomHeight;
+    this.boundsMinZoom = computeFitZoom(
+      this.getWrapperSize(),
+      this.getContainerSize(),
+      this.options.bounds
+    );
+  }
 
-    if (this.options.bounds === 'cover') {
-      this.boundsMinZoom = Math.max(minZoomX, minZoomY);
-    } else {
-      this.boundsMinZoom = Math.min(minZoomX, minZoomY);
-    }
+  // Unscaled wrapper size in pixels
+  getWrapperSize() {
+    const wrapper = this.getWrapper();
+    return { width: wrapper.clientWidth, height: wrapper.clientHeight };
+  }
+
+  // Unscaled panZoom element size in pixels
+  getContainerSize() {
+    const container = this.getContainer();
+    return { width: container.clientWidth, height: container.clientHeight };
   }
 
   /**
@@ -697,44 +705,20 @@ export default class domPanZoom {
 
     // Fit to bounds
     if (this.options.bounds) {
-      const wrapper = this.getWrapper();
-      const container = this.getContainer();
-      const wrapperWidth = wrapper.clientWidth;
-      const wrapperHeight = wrapper.clientHeight;
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-      const containerZoomWidth = containerWidth * this.zoom;
-      const containerZoomHeight = containerHeight * this.zoom;
-
-      const upperOffsetX = (containerWidth / 2) * (this.zoom - 1);
-      const lowerOffsetX = upperOffsetX * -1 + wrapperWidth - containerWidth;
-
-      if (containerZoomWidth < wrapperWidth) {
-        if (this.x < upperOffsetX) {
-          this.x = upperOffsetX;
-        }
-        if (this.x > lowerOffsetX) {
-          this.x = lowerOffsetX;
-        }
-      } else {
-        this.x = Math.min(this.x, upperOffsetX);
-        this.x = Math.max(this.x, lowerOffsetX);
-      }
-
-      const upperOffsetY = (containerHeight / 2) * (this.zoom - 1);
-      const lowerOffsetY = upperOffsetY * -1 + wrapperHeight - containerHeight;
-
-      if (containerZoomHeight < wrapperHeight) {
-        if (this.y < upperOffsetY) {
-          this.y = upperOffsetY;
-        }
-        if (this.y > lowerOffsetY) {
-          this.y = lowerOffsetY;
-        }
-      } else {
-        this.y = Math.min(this.y, upperOffsetY);
-        this.y = Math.max(this.y, lowerOffsetY);
-      }
+      const wrapper = this.getWrapperSize();
+      const container = this.getContainerSize();
+      this.x = clampAxisToBounds(
+        this.x,
+        wrapper.width,
+        container.width,
+        this.zoom
+      );
+      this.y = clampAxisToBounds(
+        this.y,
+        wrapper.height,
+        container.height,
+        this.zoom
+      );
     }
 
     // Set position
@@ -760,26 +744,14 @@ export default class domPanZoom {
   sanitizeZoom(zoom) {
     // Get values for 'cover' and 'contain'
     if (zoom === 'cover' || zoom === 'contain') {
-      const wrapper = this.getWrapper();
-      const container = this.getContainer();
-
-      const maxWidth = wrapper.clientWidth;
-      const maxHeight = wrapper.clientHeight;
-
-      const panZoomWidth = container.clientWidth;
-      const panZoomHeight = container.clientHeight;
-
-      const minZoomX = maxWidth / panZoomWidth;
-      const minZoomY = maxHeight / panZoomHeight;
-
       // TODO is first cebter OK?
       this.center(true, true);
 
-      if (zoom === 'cover') {
-        zoom = Math.max(minZoomX, minZoomY);
-      } else {
-        zoom = Math.min(minZoomX, minZoomY);
-      }
+      zoom = computeFitZoom(
+        this.getWrapperSize(),
+        this.getContainerSize(),
+        zoom
+      );
     }
 
     // Adjust for minZoom
