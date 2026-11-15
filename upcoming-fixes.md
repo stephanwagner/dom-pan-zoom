@@ -54,9 +54,13 @@ All loose `==` comparisons now use `===`: the `bounds` and `zoom` string checks 
 
 The `cond && (x = …)` expressions in `setPosition()`, `pan()`, `adjustPositionByZoom()` and `fireEvent()` are now plain `if` statements. `pan()` uses an `if` / `else if` chain because the directions are mutually exclusive.
 
-### 10. Extract shared bounds / fit math
+### 10. Extract shared bounds / fit math — DONE
 
-Fit/contain min-zoom logic appears in `adjustMinZoomForBounds()`, `sanitizeZoom()`, and related clamping in `setPosition()`. A single pure helper (e.g. `computeFitZoom(wrapper, container, mode)`) would reduce drift and is easy to unit test.
+`src/core/fitMath.js` holds two pure helpers with their own unit tests (`test/fitMath.test.js`): `computeFitZoom(wrapper, container, mode)` for the cover/contain zoom used by `adjustMinZoomForBounds()` and `sanitizeZoom()`, and `clampAxisToBounds(position, wrapperSize, containerSize, zoom)` for the per-axis clamping in `setPosition()`. The two clamping branches turned out to be the same clamp between `upperOffset` and `lowerOffset`, so they collapse into one. Behavior is unchanged by the extraction itself.
+
+**Extra: unmeasured panZoom element — DONE.** While the panZoom element had zero width or height (e.g. inside a `display: none` parent), `sanitizeZoom('cover' | 'contain')` divided by zero: `Infinity` was clamped to `maxZoom`, and `NaN` (wrapper also zero-size) slipped past the min/max clamps. `computeFitZoom()` now returns `null` in that case. `sanitizeZoom()` falls back to zoom `1` (still clamped to `minZoom` / `maxZoom`), and `adjustMinZoomForBounds()` keeps `boundsMinZoom` at `0` as before. Once the element becomes visible, call `resize()` and `reset()` (or `zoomTo()`) to fit it again; `resize()` alone only re-clamps the current zoom.
+
+**Extra: `getPanBounds()` — DONE.** Consumers that wanted to know how far the content can still be panned had to copy the `setPosition()` clamp math, since the build only exposes the class. `fitMath.js` now has `getAxisBounds(wrapperSize, containerSize, zoom)` (which `clampAxisToBounds()` uses), and the public `getPanBounds()` returns `{ minX, maxX, minY, maxY }` (or `null` with `bounds: false`) from the same helper, so consumers can read the clamp range instead of re-deriving it.
 
 ### 11. Remove or implement `preferPageScroll`
 

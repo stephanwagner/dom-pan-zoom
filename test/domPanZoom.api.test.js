@@ -39,6 +39,60 @@ describe('domPanZoom API', () => {
     expect(instance.getPan().y).toBeCloseTo(50, 1);
   });
 
+  it('cover / contain fall back to zoom 1 while content is unmeasured', () => {
+    const { content, instance } = setup({ bounds: 'contain', minZoom: 0.1 });
+
+    // e.g. the element is inside a hidden (display: none) parent
+    setLayoutSize(content, 0, 0);
+    instance.resize();
+
+    for (const zoom of ['contain', 'cover']) {
+      instance.reset({ zoom, instant: true });
+
+      expect(instance.getZoom()).toBe(1);
+      expect(instance.getMinZoom()).toBe(0.1);
+      expect(Number.isFinite(instance.x)).toBe(true);
+      expect(Number.isFinite(instance.y)).toBe(true);
+    }
+  });
+
+  it('getPanBounds returns null without bounds', () => {
+    const { instance } = setup({ bounds: false });
+
+    expect(instance.getPanBounds()).toBe(null);
+  });
+
+  it('getPanBounds matches where panning gets clamped', () => {
+    // Wrapper and content are both 800x400
+    const { instance } = setup({ bounds: 'contain', initialZoom: 2 });
+
+    expect(instance.getPanBounds()).toEqual({
+      minX: -400,
+      maxX: 400,
+      minY: -200,
+      maxY: 200
+    });
+
+    for (let i = 0; i < 20; i++) instance.panLeft(true);
+    for (let i = 0; i < 20; i++) instance.panUp(true);
+    expect([instance.x, instance.y]).toEqual([-400, -200]);
+
+    for (let i = 0; i < 20; i++) instance.panRight(true);
+    for (let i = 0; i < 20; i++) instance.panDown(true);
+    expect([instance.x, instance.y]).toEqual([400, 200]);
+  });
+
+  it('getPanBounds locks both axes when the content exactly fits', () => {
+    const { instance } = setup({ bounds: 'contain', initialZoom: 1 });
+
+    expect(instance.getPanBounds()).toEqual({
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0
+    });
+  });
+
   it('reset accepts option overrides', () => {
     const { instance } = setup({ initialZoom: 1, center: false, initialPanX: 10, initialPanY: 20 });
 
