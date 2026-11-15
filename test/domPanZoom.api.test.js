@@ -39,6 +39,23 @@ describe('domPanZoom API', () => {
     expect(instance.getPan().y).toBeCloseTo(50, 1);
   });
 
+  it('cover / contain fall back to zoom 1 while content is unmeasured', () => {
+    const { content, instance } = setup({ bounds: 'contain', minZoom: 0.1 });
+
+    // e.g. the element is inside a hidden (display: none) parent
+    setLayoutSize(content, 0, 0);
+    instance.resize();
+
+    for (const zoom of ['contain', 'cover']) {
+      instance.reset({ zoom, instant: true });
+
+      expect(instance.getZoom()).toBe(1);
+      expect(instance.getMinZoom()).toBe(0.1);
+      expect(Number.isFinite(instance.x)).toBe(true);
+      expect(Number.isFinite(instance.y)).toBe(true);
+    }
+  });
+
   it('reset accepts option overrides', () => {
     const { instance } = setup({ initialZoom: 1, center: false, initialPanX: 10, initialPanY: 20 });
 

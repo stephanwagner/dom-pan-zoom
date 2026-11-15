@@ -56,7 +56,9 @@ The `cond && (x = …)` expressions in `setPosition()`, `pan()`, `adjustPosition
 
 ### 10. Extract shared bounds / fit math — DONE
 
-`src/core/fitMath.js` holds two pure helpers with their own unit tests (`test/fitMath.test.js`): `computeFitZoom(wrapper, container, mode)` for the cover/contain zoom used by `adjustMinZoomForBounds()` and `sanitizeZoom()`, and `clampAxisToBounds(position, wrapperSize, containerSize, zoom)` for the per-axis clamping in `setPosition()`. The two clamping branches turned out to be the same clamp between `upperOffset` and `lowerOffset`, so they collapse into one. Behavior is unchanged, including `sanitizeZoom('cover' | 'contain')` still producing `Infinity` / `NaN` for an unmeasured (zero-size) container; only `adjustMinZoomForBounds()` guards against that.
+`src/core/fitMath.js` holds two pure helpers with their own unit tests (`test/fitMath.test.js`): `computeFitZoom(wrapper, container, mode)` for the cover/contain zoom used by `adjustMinZoomForBounds()` and `sanitizeZoom()`, and `clampAxisToBounds(position, wrapperSize, containerSize, zoom)` for the per-axis clamping in `setPosition()`. The two clamping branches turned out to be the same clamp between `upperOffset` and `lowerOffset`, so they collapse into one. Behavior is unchanged by the extraction itself.
+
+**Extra: unmeasured panZoom element — DONE.** While the panZoom element had zero width or height (e.g. inside a `display: none` parent), `sanitizeZoom('cover' | 'contain')` divided by zero: `Infinity` was clamped to `maxZoom`, and `NaN` (wrapper also zero-size) slipped past the min/max clamps. `computeFitZoom()` now returns `null` in that case. `sanitizeZoom()` falls back to zoom `1` (still clamped to `minZoom` / `maxZoom`), and `adjustMinZoomForBounds()` keeps `boundsMinZoom` at `0` as before. Once the element becomes visible, call `resize()` and `reset()` (or `zoomTo()`) to fit it again; `resize()` alone only re-clamps the current zoom.
 
 ### 11. Remove or implement `preferPageScroll`
 

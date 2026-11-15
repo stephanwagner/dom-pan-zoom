@@ -17,6 +17,17 @@ describe('computeFitZoom', () => {
     expect(computeFitZoom(wrapper, container, true)).toBe(0.5);
   });
 
+  it('returns null while the container is unmeasured', () => {
+    const empty = { width: 0, height: 0 };
+    expect(computeFitZoom(wrapper, { width: 0, height: 300 }, 'contain')).toBe(
+      null
+    );
+    expect(computeFitZoom(wrapper, { width: 800, height: 0 }, 'cover')).toBe(
+      null
+    );
+    expect(computeFitZoom(empty, empty, 'contain')).toBe(null);
+  });
+
   it('returns 1 when the sizes already match', () => {
     const size = { width: 200, height: 100 };
     expect(computeFitZoom(size, size, 'contain')).toBe(1);

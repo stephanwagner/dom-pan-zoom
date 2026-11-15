@@ -257,17 +257,16 @@ export default class domPanZoom {
       return;
     }
 
-    // Skip while the container is unmeasured (e.g. hidden), which would
-    // otherwise give an infinite minimum zoom
-    if (!container.clientWidth || !container.clientHeight) {
-      return;
-    }
-
-    this.boundsMinZoom = computeFitZoom(
+    const fitZoom = computeFitZoom(
       this.getWrapperSize(),
       this.getContainerSize(),
       this.options.bounds
     );
+
+    // No bounds limit while the container is unmeasured (e.g. hidden)
+    if (fitZoom !== null) {
+      this.boundsMinZoom = fitZoom;
+    }
   }
 
   // Unscaled wrapper size in pixels
@@ -747,11 +746,15 @@ export default class domPanZoom {
       // TODO is first cebter OK?
       this.center(true, true);
 
-      zoom = computeFitZoom(
+      const fitZoom = computeFitZoom(
         this.getWrapperSize(),
         this.getContainerSize(),
         zoom
       );
+
+      // Fall back to the original size while the container is unmeasured
+      // (e.g. hidden); minZoom / maxZoom still apply below
+      zoom = fitZoom === null ? 1 : fitZoom;
     }
 
     // Adjust for minZoom

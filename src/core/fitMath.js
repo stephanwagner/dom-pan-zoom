@@ -17,15 +17,19 @@
  * else is treated as `'contain'` (the smaller ratio, so the whole container
  * stays visible).
  *
- * A zero container width or height gives `Infinity` or `NaN`; callers that can
- * see unmeasured elements should check the sizes first.
+ * Returns `null` while the container is unmeasured (zero width or height, e.g.
+ * inside a `display: none` parent), since no zoom level can fit it.
  *
  * @param {Size} wrapper Wrapper size in pixels.
  * @param {Size} container Unscaled container size in pixels.
  * @param {'cover' | 'contain'} mode Fit mode.
- * @returns {number} Fit zoom level.
+ * @returns {number | null} Fit zoom level, or `null` if it can't be computed.
  */
 export function computeFitZoom(wrapper, container, mode) {
+  if (!container.width || !container.height) {
+    return null;
+  }
+
   const zoomX = wrapper.width / container.width;
   const zoomY = wrapper.height / container.height;
   return mode === 'cover' ? Math.max(zoomX, zoomY) : Math.min(zoomX, zoomY);
