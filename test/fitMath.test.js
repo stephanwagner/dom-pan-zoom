@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { clampAxisToBounds, computeFitZoom } from '../src/core/fitMath.js';
+import {
+  clampAxisToBounds,
+  computeFitZoom,
+  getAxisBounds
+} from '../src/core/fitMath.js';
 
 describe('computeFitZoom', () => {
   const wrapper = { width: 400, height: 300 };
@@ -32,6 +36,18 @@ describe('computeFitZoom', () => {
     const size = { width: 200, height: 100 };
     expect(computeFitZoom(size, size, 'contain')).toBe(1);
     expect(computeFitZoom(size, size, 'cover')).toBe(1);
+  });
+});
+
+describe('getAxisBounds', () => {
+  // Wrapper 400px, container 200px
+  it('returns min <= max whether the container is smaller or larger', () => {
+    expect(getAxisBounds(400, 200, 1)).toEqual({ min: 0, max: 200 });
+    expect(getAxisBounds(400, 200, 4)).toEqual({ min: -100, max: 300 });
+  });
+
+  it('collapses to one position when the container fills the wrapper', () => {
+    expect(getAxisBounds(400, 200, 2)).toEqual({ min: 100, max: 100 });
   });
 });
 

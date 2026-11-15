@@ -1,9 +1,23 @@
-import { clampAxisToBounds, computeFitZoom } from './fitMath.js';
+import {
+  clampAxisToBounds,
+  computeFitZoom,
+  getAxisBounds
+} from './fitMath.js';
 
 /**
  * Zoom level: a number (1 is the original size) or `'cover'` / `'contain'`
  * to fit the panZoom element to the wrapper.
  * @typedef {number | 'cover' | 'contain'} DomPanZoomZoom
+ */
+
+/**
+ * Pixel range the translation is clamped to, see
+ * {@link domPanZoom#getPanBounds}.
+ * @typedef {object} DomPanZoomPanBounds
+ * @property {number} minX
+ * @property {number} maxX
+ * @property {number} minY
+ * @property {number} maxY
  */
 
 /**
@@ -799,6 +813,26 @@ export default class domPanZoom {
    */
   getMaxZoom() {
     return this.options.maxZoom;
+  }
+
+  /**
+   * Get the range the translation (`x` / `y`, in pixels, as in the
+   * `transform` matrix) is clamped to at the current zoom, so the content
+   * stays within `bounds`. `minX === maxX` means horizontal panning is
+   * locked; same for `minY` / `maxY`.
+   * @returns {DomPanZoomPanBounds | null} The allowed range, or `null` when
+   *   `bounds` is `false` (unbounded).
+   */
+  getPanBounds() {
+    if (!this.options.bounds) {
+      return null;
+    }
+
+    const wrapper = this.getWrapperSize();
+    const container = this.getContainerSize();
+    const x = getAxisBounds(wrapper.width, container.width, this.zoom);
+    const y = getAxisBounds(wrapper.height, container.height, this.zoom);
+    return { minX: x.min, maxX: x.max, minY: y.min, maxY: y.max };
   }
 
   /**

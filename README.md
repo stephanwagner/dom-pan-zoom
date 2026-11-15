@@ -107,6 +107,7 @@ You can use the following methods:
 | `.getZoom()` | Returns the current zoom level |
 | `.getMinZoom()` | Returns the effective minimum zoom. With `bounds: 'contain'` or `'cover'` this can be higher than the `minZoom` option, but never higher than `maxZoom` |
 | `.getMaxZoom()` | Returns the maximum zoom (the current `maxZoom` option) |
+| `.getPanBounds()` | Returns `{ minX, maxX, minY, maxY }`, the pixel range the pan position (`x` / `y`) is clamped to at the current zoom, or `null` with `bounds: false`. `minX === maxX` means horizontal panning is locked |
 
 | Setters |  |
 | --- | --- |

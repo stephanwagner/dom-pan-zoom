@@ -36,14 +36,31 @@ export function computeFitZoom(wrapper, container, mode) {
 }
 
 /**
- * Clamp a translation along one axis so the zoomed container stays within the
- * wrapper's bounds.
+ * Allowed translation range along one axis that keeps the zoomed container
+ * within the wrapper's bounds.
  *
  * The container is scaled around its center, so at `zoom` its edge has moved
- * by `containerSize / 2 * (zoom - 1)`. The allowed range runs between that
- * offset and the offset that aligns the opposite edges. When the zoomed
- * container is smaller than the wrapper, it is kept inside the wrapper; when
- * it is larger, it is kept covering the wrapper.
+ * by `containerSize / 2 * (zoom - 1)`. The range runs between that offset and
+ * the offset that aligns the opposite edges. When the zoomed container is
+ * smaller than the wrapper, it is kept inside the wrapper; when it is larger,
+ * it is kept covering the wrapper. `min === max` means the axis is locked.
+ *
+ * @param {number} wrapperSize Wrapper width or height in pixels.
+ * @param {number} containerSize Unscaled container width or height in pixels.
+ * @param {number} zoom Current zoom level.
+ * @returns {{ min: number, max: number }} Translation range in pixels.
+ */
+export function getAxisBounds(wrapperSize, containerSize, zoom) {
+  const upperOffset = (containerSize / 2) * (zoom - 1);
+  const lowerOffset = upperOffset * -1 + wrapperSize - containerSize;
+  return {
+    min: Math.min(upperOffset, lowerOffset),
+    max: Math.max(upperOffset, lowerOffset)
+  };
+}
+
+/**
+ * Clamp a translation along one axis to {@link getAxisBounds}.
  *
  * @param {number} position Current translation in pixels.
  * @param {number} wrapperSize Wrapper width or height in pixels.
@@ -52,9 +69,6 @@ export function computeFitZoom(wrapper, container, mode) {
  * @returns {number} Clamped translation in pixels.
  */
 export function clampAxisToBounds(position, wrapperSize, containerSize, zoom) {
-  const upperOffset = (containerSize / 2) * (zoom - 1);
-  const lowerOffset = upperOffset * -1 + wrapperSize - containerSize;
-  const min = Math.min(upperOffset, lowerOffset);
-  const max = Math.max(upperOffset, lowerOffset);
+  const { min, max } = getAxisBounds(wrapperSize, containerSize, zoom);
   return Math.min(Math.max(position, min), max);
 }
