@@ -62,9 +62,9 @@ The `cond && (x = …)` expressions in `setPosition()`, `pan()`, `adjustPosition
 
 **Extra: `getPanBounds()` — DONE.** Consumers that wanted to know how far the content can still be panned had to copy the `setPosition()` clamp math, since the build only exposes the class. `fitMath.js` now has `getAxisBounds(wrapperSize, containerSize, zoom)` (which `clampAxisToBounds()` uses), and the public `getPanBounds()` returns `{ minX, maxX, minY, maxY }` (or `null` with `bounds: false`) from the same helper, so consumers can read the clamp range instead of re-deriving it.
 
-### 11. Remove or implement `preferPageScroll`
+### 11. Remove or implement `preferPageScroll` — DONE (removed)
 
-Option exists in defaults but is not wired up. Either implement (page scroll vs zoom/pan) or remove from defaults and README to avoid confusing library users.
+`preferPageScroll` and `preferPageScrollText` were in the defaults but nothing read them, and the README never documented them. Both are removed from the defaults. `mouseWheelRequiresKey` already covers the "let the page scroll" case for the wheel. Touch scroll vs. pan could come back later as a real feature.
 
 ---
 
@@ -74,17 +74,17 @@ Option exists in defaults but is not wired up. Either implement (page scroll vs 
 
 The options, the position object, the event callbacks and every public method documented in the README now have JSDoc in `src/core/domPanZoom.js`. A shipped `.d.ts` is still open; it could be generated from the JSDoc with `tsc --allowJs --declaration --emitDeclarationOnly`.
 
-### 13. Class naming
+### 13. Class naming — DONE (documented)
 
-Class is `domPanZoom` (camelCase) rather than conventional `DomPanZoom`. May be intentional for UMD global name — document if so.
+The class stays `domPanZoom` because it is the package's public name and the UMD global. The class JSDoc and the README usage section now say so. The rename itself is still out of scope (see below).
 
 ### 14. Transform string building
 
 `matrix(...)` via string concat works. Could use `translate() scale()` or template literals; optional `will-change: transform` if jank appears on large content.
 
-### 15. Cache event callback bindings
+### 15. Cache event callback bindings — DONE
 
-`fireEvent` calls `.bind(this)` on every invocation. Negligible at current scale; could bind once in constructor if callbacks become hot paths.
+`fireEvent` now calls `this.options[event].call(this, pass)`, so it no longer creates a bound function on every event. Binding once in the constructor would have frozen the callbacks, but options can be reassigned at runtime, so `call()` keeps that working. Tests cover `this` and a callback assigned after init.
 
 ---
 
@@ -109,7 +109,8 @@ Class is `domPanZoom` (camelCase) rather than conventional `DomPanZoom`. May be 
 5. JSDoc on public API (#12) — DONE
 6. `AbortController` refactor (#5) — DONE
 7. Guard against double `init()` (#6) — DONE
-8. Remaining consistency items as time allows
+8. `preferPageScroll` removal (#11), class naming note (#13), callback `call()` (#15) — DONE
+9. Remaining: options-object signatures (#7), shipped `.d.ts` (#12), transform string (#14)
 
 ---
 

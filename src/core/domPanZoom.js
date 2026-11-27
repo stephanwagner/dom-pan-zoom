@@ -83,6 +83,11 @@ import {
 
 /**
  * Pan and zoom any DOM element inside a wrapper element.
+ *
+ * The class name is lower camelCase (`domPanZoom`, not `DomPanZoom`) on
+ * purpose: it matches the package's original public name, which is also the
+ * UMD browser global (`window.domPanZoom`). Renaming it would break existing
+ * consumers.
  */
 export default class domPanZoom {
   /**
@@ -144,15 +149,6 @@ export default class domPanZoom {
       // The option 'center' has to be 'false' for initial panning to work
       initialPanX: 0,
       initialPanY: 0,
-
-      // Prefer scrolling the page to zooming with mousewheel or panning with touch event
-      // TODO how does google do it with tough events (use two fingers) ??
-      preferPageScroll: true,
-
-      // The text to show when the option preferPageScroll is enabled
-      preferPageScrollText: {
-        // TODO Differentiate between mac and windows
-      },
 
       // Transition speed for panning and zooming in milliseconds
       // Higher values are slower
@@ -252,7 +248,7 @@ export default class domPanZoom {
   // Fire an event from the options
   fireEvent(event, pass) {
     if (this.options[event]) {
-      this.options[event].bind(this)(pass);
+      this.options[event].call(this, pass);
     }
   }
 
