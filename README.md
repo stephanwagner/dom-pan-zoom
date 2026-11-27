@@ -52,6 +52,8 @@ new domPanZoom({
 });
 ```
 
+The class name is lower camelCase (`domPanZoom`) on purpose. It is also the browser global the UMD build exposes, so it stays as it is for compatibility.
+
 The options `wrapperElement` and `panZoomElement` are required.\
 You can use any query selector or the actual DOM element instance.\
 If either option is missing, invalid, or a selector that matches no element, the constructor throws an `Error`.

@@ -255,6 +255,38 @@ describe('domPanZoom options', () => {
     expect(onZoom).toHaveBeenCalledTimes(1);
   });
 
+  it('calls event callbacks with the instance as this', () => {
+    let self = null;
+    const { instance } = setup({
+      initialZoom: 1,
+      onZoom() {
+        self = this;
+      }
+    });
+
+    instance.zoomIn(true);
+
+    expect(self).toBe(instance);
+  });
+
+  it('uses an event callback assigned to options after init', () => {
+    const onZoom = vi.fn();
+    const { instance } = setup({ initialZoom: 1 });
+
+    instance.options.onZoom = onZoom;
+    instance.zoomIn(true);
+
+    expect(onZoom).toHaveBeenCalledTimes(1);
+    expect(onZoom.mock.contexts[0]).toBe(instance);
+  });
+
+  it('does not define the removed preferPageScroll options', () => {
+    const { instance } = setup();
+
+    expect(instance.options).not.toHaveProperty('preferPageScroll');
+    expect(instance.options).not.toHaveProperty('preferPageScrollText');
+  });
+
   it('init() after destroy() attaches listeners again', () => {
     const onZoom = vi.fn();
     const { wrapper, instance } = setup({ initialZoom: 1, onZoom });
